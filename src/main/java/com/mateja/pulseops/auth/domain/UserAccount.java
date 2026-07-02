@@ -42,11 +42,9 @@ public class UserAccount {
         return email;
     }
 
-
     public String getPasswordHash() {
         return passwordHash;
     }
-
 
     public Role getRole() {
         return role;

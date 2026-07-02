@@ -1,6 +1,7 @@
 package com.mateja.pulseops.common.web;
 
 import com.mateja.pulseops.auth.application.EmailAlreadyRegisteredException;
+import com.mateja.pulseops.auth.application.InvalidCredentialsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.validation.FieldError;
@@ -33,6 +34,14 @@ public class GlobalExceptionHandler {
         }
 
         pb.setProperty("fieldErrors", fieldErrors);
+        return pb;
+    }
+
+    @ExceptionHandler(value = InvalidCredentialsException.class)
+    public ProblemDetail handleInvalidCredentialsException(InvalidCredentialsException ex) {
+        ProblemDetail pb = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED,  ex.getMessage());
+        pb.setTitle("Unauthorized");
+
         return pb;
     }
 }

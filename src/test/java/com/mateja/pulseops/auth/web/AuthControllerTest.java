@@ -2,6 +2,7 @@ package com.mateja.pulseops.auth.web;
 
 import com.mateja.pulseops.auth.application.AuthService;
 import com.mateja.pulseops.auth.application.EmailAlreadyRegisteredException;
+import com.mateja.pulseops.auth.application.InvalidCredentialsException;
 import com.mateja.pulseops.auth.domain.Role;
 import com.mateja.pulseops.common.web.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
@@ -119,5 +120,70 @@ class AuthControllerTest {
                         .value("Email is already registered"));
 
         verify(authService).register(any(RegisterRequest.class));
+    }
+
+    @Test
+    void loginShouldReturnOkWithToken() throws Exception {
+        LoginRequest request =
+                new LoginRequest("test@gmail.com", "password123");
+
+        LoginResponse response =
+                new LoginResponse("fake-token", "Bearer", 3600);
+
+        when(authService.login(any(LoginRequest.class)))
+                .thenReturn(response);
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(request)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.accessToken").value("fake-token"))
+                .andExpect(jsonPath("$.tokenType").value("Bearer"))
+                .andExpect(jsonPath("$.expiresIn").value(3600));
+
+        verify(authService).login(any(LoginRequest.class));
+    }
+
+    @Test
+    void loginShouldReturnBadRequestForInvalidInput() throws Exception {
+        LoginRequest request = new LoginRequest("invalid-email", "");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Bad Request"))
+                .andExpect(jsonPath("$.detail").value("Validation Failed"))
+                .andExpect(jsonPath("$.fieldErrors.email").exists())
+                .andExpect(jsonPath("$.fieldErrors.password").exists());
+
+        verifyNoInteractions(authService);
+    }
+
+    @Test
+    void loginShouldReturnUnauthorizedForBadCredentials() throws Exception {
+        LoginRequest request =
+                new LoginRequest("test@gmail.com", "wrong-password");
+
+        when(authService.login(any(LoginRequest.class)))
+                .thenThrow(new InvalidCredentialsException(
+                        "Invalid email or password"
+                ));
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(
+                        MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Unauthorized"))
+                .andExpect(jsonPath("$.detail")
+                        .value("Invalid email or password"));
+
+        verify(authService).login(any(LoginRequest.class));
     }
 }

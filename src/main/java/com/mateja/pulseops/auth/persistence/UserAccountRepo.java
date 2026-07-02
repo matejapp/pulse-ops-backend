@@ -14,4 +14,5 @@ public interface UserAccountRepo extends JpaRepository<UserAccount, UUID> {
 
     boolean existsByEmailIgnoreCase(String email);
 
+
 }
