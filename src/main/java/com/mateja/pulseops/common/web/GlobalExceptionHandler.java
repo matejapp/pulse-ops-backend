@@ -11,9 +11,15 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+// @RestControllerAdvice = one central place to turn exceptions thrown by ANY controller into
+// HTTP responses. Keeps controllers/services free of try/catch; they just throw, we map here.
+// ProblemDetail is the RFC 7807 standard error shape (type/title/status/detail + custom props),
+// served as application/problem+json.
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // Domain exception from register() -> 409 Conflict: the request was valid but conflicts with
+    // existing state (email taken).
     @ExceptionHandler(value = EmailAlreadyRegisteredException.class)
     public ProblemDetail handleEmailAlreadyRegisteredException(EmailAlreadyRegisteredException ex) {
 
@@ -22,21 +28,28 @@ public class GlobalExceptionHandler {
         return pb;
     }
 
+    // Thrown by Spring when a @Valid @RequestBody fails its Jakarta validation annotations -> 400.
+    // We flatten the per-field errors into a {field: message} map so clients can show them inline.
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
     public ProblemDetail handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
         ProblemDetail pb = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Validation Failed");
         pb.setTitle("Bad Request");
 
+        // LinkedHashMap preserves insertion order (stable output); putIfAbsent keeps the FIRST
+        // message per field if a field has multiple violations, instead of overwriting.
         Map<String,String> fieldErrors = new LinkedHashMap<>();
 
         for(FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
             fieldErrors.putIfAbsent(fieldError.getField(), fieldError.getDefaultMessage());
         }
 
+        // setProperty adds a NON-standard field to the JSON body alongside the RFC 7807 members.
         pb.setProperty("fieldErrors", fieldErrors);
         return pb;
     }
 
+    // Bad login -> 401 Unauthorized. The message is intentionally generic (see AuthService.login)
+    // to avoid leaking whether the email exists.
     @ExceptionHandler(value = InvalidCredentialsException.class)
     public ProblemDetail handleInvalidCredentialsException(InvalidCredentialsException ex) {
         ProblemDetail pb = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED,  ex.getMessage());
