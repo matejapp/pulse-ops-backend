@@ -1,4 +1,4 @@
-package com.mateja.pulseops.monitoreservice.domain;
+package com.mateja.pulseops.monitoredservice.domain;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;

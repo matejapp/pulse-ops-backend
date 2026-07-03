@@ -2,6 +2,7 @@ package com.mateja.pulseops.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -36,6 +37,8 @@ public class SecurityConfig {
         // so any new endpoint is secure-by-default (requires a valid token unless listed here).
         http.authorizeHttpRequests(authorizeRequests -> authorizeRequests
                 .requestMatchers("/api/auth/register", "/api/auth/login", "/actuator/health", "/api/public/**").permitAll()
+                .requestMatchers(HttpMethod.DELETE, "/api/services/*").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/services").hasRole("ADMIN")
                 .anyRequest().authenticated());
         // Disable the built-in login mechanisms we don't use. Without this, Spring would pop
         // a browser Basic-auth dialog / redirect to a login form on 401 instead of returning JSON.

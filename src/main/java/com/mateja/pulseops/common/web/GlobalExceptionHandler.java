@@ -2,6 +2,8 @@ package com.mateja.pulseops.common.web;
 
 import com.mateja.pulseops.auth.application.EmailAlreadyRegisteredException;
 import com.mateja.pulseops.auth.application.InvalidCredentialsException;
+import com.mateja.pulseops.monitoredservice.application.MonitoredServiceNotFoundException;
+import com.mateja.pulseops.monitoredservice.application.ServiceAlreadyExistsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.validation.FieldError;
@@ -55,6 +57,20 @@ public class GlobalExceptionHandler {
         ProblemDetail pb = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED,  ex.getMessage());
         pb.setTitle("Unauthorized");
 
+        return pb;
+    }
+
+    @ExceptionHandler(value = ServiceAlreadyExistsException.class)
+    public ProblemDetail handleServiceAlreadExistsException(ServiceAlreadyExistsException ex) {
+        ProblemDetail pb = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        pb.setTitle("Service Already Exists");
+        return pb;
+    }
+
+    @ExceptionHandler(value = MonitoredServiceNotFoundException.class)
+    public ProblemDetail handleMonitoredServiceNotFoundException(MonitoredServiceNotFoundException ex) {
+        ProblemDetail pb = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        pb.setTitle("Service Not Found");
         return pb;
     }
 }
