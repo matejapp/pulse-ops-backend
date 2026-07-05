@@ -28,6 +28,11 @@ public class HttpMonitor {
             nullable = false
     )
     private MonitoredService  monitoredService;
+    @Column(name = "status", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private MonitorStatus status;
+    @Column(name = "consecutive_failures", nullable = false)
+    private int consecutiveFailures;
     @Column(name = "target_url", nullable = false)
     private String targetUrl;
     // Stored as text ("GET"/"HEAD"); the DB CHECK constraint also restricts to those values.
@@ -48,12 +53,15 @@ public class HttpMonitor {
     // enabled defaults to true HERE, in Java. The DB has DEFAULT true too, but JPA always writes
     // the field in its INSERT, so a Java boolean left as false would override the DB default — hence
     // we set it explicitly so new monitors are active by default.
-    public HttpMonitor(MonitoredService monitoredService, String targetUrl, HttpMethod httpMethod, int expectedStatus) {
+    public HttpMonitor(MonitoredService monitoredService, String targetUrl,
+                       HttpMethod httpMethod, int expectedStatus) {
         this.monitoredService = monitoredService;
         this.targetUrl = targetUrl;
         this.httpMethod = httpMethod;
         this.expectedStatus = expectedStatus;
         this.enabled = true;
+        this.status = MonitorStatus.UNCHECKED;   // birth state — fixed, not caller-supplied
+        this.consecutiveFailures = 0;            // explicit for symmetry (int already 0)
     }
 
     public UUID getMonitorId() {
@@ -62,6 +70,14 @@ public class HttpMonitor {
 
     public MonitoredService getMonitoredService() {
         return monitoredService;
+    }
+
+    public MonitorStatus getStatus() {
+        return status;
+    }
+
+    public int getConsecutiveFailures() {
+        return consecutiveFailures;
     }
 
     public String getTargetUrl() {
@@ -82,5 +98,17 @@ public class HttpMonitor {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public void recordSuccess(){
+       consecutiveFailures = 0;
+       status = MonitorStatus.OPERATIONAL;
+    }
+
+    public void recordFailure(){
+        consecutiveFailures++;
+        if(consecutiveFailures >= 3){
+            status =  MonitorStatus.DEGRADED;
+        }
     }
 }

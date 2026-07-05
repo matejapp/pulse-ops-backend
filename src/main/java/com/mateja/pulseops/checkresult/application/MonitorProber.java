@@ -1,7 +1,6 @@
 package com.mateja.pulseops.checkresult.application;
 
 import com.mateja.pulseops.checkresult.domain.CheckResult;
-import com.mateja.pulseops.checkresult.persistence.CheckResultRepo;
 import com.mateja.pulseops.httpmonitor.domain.HttpMonitor;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +14,11 @@ import java.time.Instant;
 public class MonitorProber {
 
     private final RestClient restClient;
-    private final CheckResultRepo checkResultRepo;
+    private final CheckResultWriter checkResultWriter;
 
-    public MonitorProber(RestClient restClient, CheckResultRepo checkResultRepo) {
+    public MonitorProber(RestClient restClient, CheckResultWriter checkResultWriter) {
         this.restClient = restClient;
-        this.checkResultRepo = checkResultRepo;
+        this.checkResultWriter = checkResultWriter;
     }
 
     public CheckResult probe(HttpMonitor monitor)
@@ -52,8 +51,14 @@ public class MonitorProber {
         long latency = (System.nanoTime() - startTime) / 1_000_000; //ms
 
         CheckResult result = new CheckResult(monitor,isSuccess, statusCode, (int)latency, errorMessage, checkStartTime );
+        if(isSuccess){
+            monitor.recordSuccess();
+        }else {
+            monitor.recordFailure();
+        }
 
-        checkResultRepo.save(result);
+        checkResultWriter.record(monitor, result);
         return result;
     }
 }
+

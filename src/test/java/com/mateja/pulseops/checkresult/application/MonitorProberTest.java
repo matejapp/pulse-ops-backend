@@ -1,7 +1,6 @@
 package com.mateja.pulseops.checkresult.application;
 
 import com.mateja.pulseops.checkresult.domain.CheckResult;
-import com.mateja.pulseops.checkresult.persistence.CheckResultRepo;
 import com.mateja.pulseops.httpmonitor.domain.HttpMethod;
 import com.mateja.pulseops.httpmonitor.domain.HttpMonitor;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +28,7 @@ class MonitorProberTest {
 
     private static final String URL = "http://monitor.test/health";
 
-    private CheckResultRepo checkResultRepo;
+    private CheckResultWriter checkResultWriter;
     private MockRestServiceServer server;
     private MonitorProber prober;
 
@@ -43,12 +42,14 @@ class MonitorProberTest {
         server = MockRestServiceServer.bindTo(builder).build();
         RestClient restClient = builder.build();
 
-        checkResultRepo = mock(CheckResultRepo.class);
-        prober = new MonitorProber(restClient, checkResultRepo);
+        // The prober now delegates persistence to the transactional writer;
+        // we mock it and assert the prober hands it the (monitor, result) pair.
+        checkResultWriter = mock(CheckResultWriter.class);
+        prober = new MonitorProber(restClient, checkResultWriter);
     }
 
     @Test
-    void probeRecordsSuccessWhenStatusMatchesExpected() {
+    void probeRecordsSuccessAndMarksMonitorSuccessWhenStatusMatchesExpected() {
         HttpMonitor monitor = monitor(URL, HttpMethod.GET, 200);
         server.expect(requestTo(URL))
                 .andExpect(method(org.springframework.http.HttpMethod.GET))
@@ -60,12 +61,13 @@ class MonitorProberTest {
         assertEquals(200, result.getResponseStatus().intValue());
         assertNull(result.getErrorMessage());
         assertNotNull(result.getCheckedAt());
-        verify(checkResultRepo).save(result);
+        verify(monitor).recordSuccess();
+        verify(checkResultWriter).record(monitor, result);
         server.verify();
     }
 
     @Test
-    void probeRecordsFailureWithMessageWhenStatusDiffersFromExpected() {
+    void probeRecordsFailureAndMarksMonitorFailureWhenStatusDiffersFromExpected() {
         HttpMonitor monitor = monitor(URL, HttpMethod.GET, 200);
         server.expect(requestTo(URL))
                 .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
@@ -75,7 +77,8 @@ class MonitorProberTest {
         assertFalse(result.isSuccess());
         assertEquals(500, result.getResponseStatus().intValue());
         assertEquals("expected 200 got 500", result.getErrorMessage());
-        verify(checkResultRepo).save(result);
+        verify(monitor).recordFailure();
+        verify(checkResultWriter).record(monitor, result);
         server.verify();
     }
 
@@ -92,7 +95,8 @@ class MonitorProberTest {
         assertFalse(result.isSuccess());
         assertNull(result.getResponseStatus());
         assertNotNull(result.getErrorMessage());
-        verify(checkResultRepo).save(result);
+        verify(monitor).recordFailure();
+        verify(checkResultWriter).record(monitor, result);
     }
 
     private HttpMonitor monitor(String url, HttpMethod method, int expectedStatus) {
