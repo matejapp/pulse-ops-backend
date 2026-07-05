@@ -39,6 +39,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/register", "/api/auth/login", "/actuator/health", "/api/public/**").permitAll()
                 .requestMatchers(HttpMethod.DELETE, "/api/services/*").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/services").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/services/*/monitors").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/services/*/monitors/*").hasRole("ADMIN")
                 .anyRequest().authenticated());
         // Disable the built-in login mechanisms we don't use. Without this, Spring would pop
         // a browser Basic-auth dialog / redirect to a login form on 401 instead of returning JSON.

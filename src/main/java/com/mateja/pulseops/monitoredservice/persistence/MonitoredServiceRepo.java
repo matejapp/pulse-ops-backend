@@ -10,7 +10,7 @@ import java.util.UUID;
 @Repository
 public interface MonitoredServiceRepo extends JpaRepository<MonitoredService, UUID> {
 
-    public boolean existsByNameIgnoreCase(String name);
+    boolean existsByNameIgnoreCase(String name);
 
 
     Optional<MonitoredService> findByNameIgnoreCase(String name);

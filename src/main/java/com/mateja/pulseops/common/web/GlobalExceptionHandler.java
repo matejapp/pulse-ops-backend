@@ -2,6 +2,7 @@ package com.mateja.pulseops.common.web;
 
 import com.mateja.pulseops.auth.application.EmailAlreadyRegisteredException;
 import com.mateja.pulseops.auth.application.InvalidCredentialsException;
+import com.mateja.pulseops.httpmonitor.application.HttpMonitorNotFoundException;
 import com.mateja.pulseops.monitoredservice.application.MonitoredServiceNotFoundException;
 import com.mateja.pulseops.monitoredservice.application.ServiceAlreadyExistsException;
 import org.springframework.http.HttpStatus;
@@ -71,6 +72,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleMonitoredServiceNotFoundException(MonitoredServiceNotFoundException ex) {
         ProblemDetail pb = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         pb.setTitle("Service Not Found");
+        return pb;
+    }
+
+    @ExceptionHandler(value = HttpMonitorNotFoundException.class)
+    public ProblemDetail handleHttpMonitorNotFoundException(HttpMonitorNotFoundException ex) {
+        ProblemDetail pb = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        pb.setTitle("Monitor Not Found");
         return pb;
     }
 }
