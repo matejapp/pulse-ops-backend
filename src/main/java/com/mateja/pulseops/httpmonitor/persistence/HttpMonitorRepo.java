@@ -14,5 +14,5 @@ public interface HttpMonitorRepo extends JpaRepository<HttpMonitor, UUID> {
     //Nested-property traversal. Underscore tells Spring Data to descent into the monitoredService
     List<HttpMonitor> findByMonitoredService_ServiceId(UUID serviceId);
 
-
+    List<HttpMonitor> findByEnabledTrue();
 }

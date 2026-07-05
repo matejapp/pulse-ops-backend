@@ -45,7 +45,7 @@ public class CheckResult {
         return monitor;
     }
 
-    public boolean getSuccess() {
+    public boolean isSuccess() {
         return success;
     }
 
