@@ -49,7 +49,10 @@ public class HttpMonitorService {
         HttpMonitor entity = new HttpMonitor(monitoredService,createHttpMonitorRequest.targetUrl()
                 ,createHttpMonitorRequest.httpMethod(),createHttpMonitorRequest.expectedStatus());
 
-        httpMonitorRepo.save(entity);
+        // saveAndFlush (not save) so Hibernate runs the INSERT now and populates the @CreationTimestamp
+        // createdAt before we map the response; a plain save() defers the flush to commit and fromEntity
+        // would serialize createdAt as null. Matches MonitoredServiceService.createMonitoredService.
+        httpMonitorRepo.saveAndFlush(entity);
         return HttpMonitorResponse.fromEntity(entity);
     }
 

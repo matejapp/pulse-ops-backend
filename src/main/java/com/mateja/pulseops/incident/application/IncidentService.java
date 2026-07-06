@@ -41,7 +41,11 @@ public class IncidentService {
                 .orElseThrow(() -> new MonitoredServiceNotFoundException("Service not found"));
 
         Incident incident = new Incident(service, request.title());
-        incidentRepo.save(incident);
+        // saveAndFlush (not save) so the INSERT runs now and the @CreationTimestamp createdAt is
+        // populated before we map the response — otherwise fromEntity would serialize createdAt as null
+        // (flush would only happen at commit). The opening update can use a plain save (its timestamp
+        // isn't in this response). Matches MonitoredServiceService.createMonitoredService.
+        incidentRepo.saveAndFlush(incident);
 
         IncidentUpdate opening = new IncidentUpdate(incident, incident.getCurrentStatus(), request.message());
         incidentUpdateRepo.save(opening);
