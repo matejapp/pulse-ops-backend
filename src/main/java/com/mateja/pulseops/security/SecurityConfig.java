@@ -36,7 +36,7 @@ public class SecurityConfig {
         // endpoints + health + public status; anyRequest().authenticated() locks the rest,
         // so any new endpoint is secure-by-default (requires a valid token unless listed here).
         http.authorizeHttpRequests(authorizeRequests -> authorizeRequests
-                .requestMatchers("/api/auth/register", "/api/auth/login", "/actuator/health", "/api/public/**").permitAll()
+                .requestMatchers("/api/auth/register", "/api/auth/login", "/actuator/health", "/api/public/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers(HttpMethod.DELETE, "/api/services/*").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/services").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/services/*/monitors").hasRole("ADMIN")

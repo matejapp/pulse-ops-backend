@@ -1,5 +1,6 @@
 package com.mateja.pulseops.auth.persistence;
 
+import com.mateja.pulseops.auth.domain.Role;
 import com.mateja.pulseops.auth.domain.UserAccount;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -19,6 +20,9 @@ public interface UserAccountRepo extends JpaRepository<UserAccount, UUID> {
     // existsBy... compiles to a lightweight SELECT 1 / COUNT — cheaper than loading the row
     // when we only need a yes/no (used by the register duplicate check).
     boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByRole(Role role);
+
 
 
 }

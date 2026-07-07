@@ -16,5 +16,8 @@ services:
       timeout: 5s
       retries: 5
 
+  app:
+    image: java
+
 volumes:
   postgres_data:
